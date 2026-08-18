@@ -13,9 +13,9 @@ export default function Article() {
   return (
     <PageLayout>
       <ReadingProgress readingTime={post.readingTime} />
-      <article className="article-page intro-appear" id="article-reading-target">
+      <article className="article-page article-detail-enter" id="article-reading-target">
         <Link href="/posts" className="back-link"><ArrowLeft size={16} /> 全部笔记</Link>
-        <p className="eyebrow">{post.category}</p><h1>{post.title}</h1>
+        <p className="eyebrow">{post.category}</p><h1 className="article-transition-title" style={{ viewTransitionName: `post-title-${post.slug}` }}>{post.title}</h1>
         <div className="article-meta"><span><CalendarDays size={14} /> {post.date}</span><i>·</i><span><Clock3 size={14} /> 预计 {post.readingTime}</span></div>
         <p className="article-dek">{post.summary}</p>
         {post.visual && <img className="article-visual" src={post.visual} alt="与文章主题对应的技术笔记插画" />}

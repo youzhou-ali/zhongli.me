@@ -13,7 +13,7 @@ export type Post = {
 
 type Frontmatter = Record<string, string>;
 
-const markdownFiles = import.meta.glob("../content/posts/*.md", {
+const markdownFiles = import.meta.glob("../../../content/posts/*.md", {
   eager: true,
   query: "?raw",
   import: "default",
