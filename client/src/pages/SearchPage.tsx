@@ -10,7 +10,7 @@ export default function SearchPage() {
   const matchedPosts = useMemo(() => {
     const normalized = query.trim().toLowerCase();
     if (!normalized) return posts;
-    return posts.filter((post) => `${post.title} ${post.summary} ${post.category}`.toLowerCase().includes(normalized));
+    return posts.filter((post) => `${post.title} ${post.summary} ${post.category} ${post.content}`.toLowerCase().includes(normalized));
   }, [query]);
   return (
     <PageLayout>
