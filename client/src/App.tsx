@@ -1,42 +1,16 @@
+/** 设计提醒：数字打字机日记——站点结构保持极简，让读者始终拥有清晰的回退和浏览路径。 */
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import NotFound from "@/pages/NotFound";
+import Article from "@/pages/Article";
+import About from "@/pages/About";
+import Home from "@/pages/Home";
+import Posts from "@/pages/Posts";
+import SearchPage from "@/pages/SearchPage";
 import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
-import { ThemeProvider } from "./contexts/ThemeContext";
-import Home from "./pages/Home";
-
-
-function Router() {
-  return (
-    <Switch>
-      <Route path={"/"} component={Home} />
-      <Route path={"/404"} component={NotFound} />
-      {/* Final fallback route */}
-      <Route component={NotFound} />
-    </Switch>
-  );
-}
-
-// NOTE: About Theme
-// - First choose a default theme according to your design style (dark or light bg), than change color palette in index.css
-//   to keep consistent foreground/background color across components
-// - If you want to make theme switchable, pass `switchable` ThemeProvider and use `useTheme` hook
 
 function App() {
-  return (
-    <ErrorBoundary>
-      <ThemeProvider
-        defaultTheme="light"
-        // switchable
-      >
-        <TooltipProvider>
-          <Toaster />
-          <Router />
-        </TooltipProvider>
-      </ThemeProvider>
-    </ErrorBoundary>
-  );
+  return <ErrorBoundary><TooltipProvider><Toaster /><Switch><Route path="/" component={Home} /><Route path="/posts" component={Posts} /><Route path="/posts/:slug" component={Article} /><Route path="/about" component={About} /><Route path="/search" component={SearchPage} /><Route component={Posts} /></Switch></TooltipProvider></ErrorBoundary>;
 }
 
 export default App;
