@@ -4,5 +4,6 @@ import PostList from "@/components/PostList";
 import { posts } from "@/lib/blog";
 
 export default function Posts() {
-  return <PageLayout><section className="archive-page intro-appear"><p className="eyebrow">ARCHIVE / 2026</p><h1>所有笔记</h1><p className="archive-lede">关于构建、界面、工作方式与持续好奇。</p><PostList posts={posts} /></section></PageLayout>;
+  const years = Array.from(new Set(posts.map((post) => post.date.slice(0, 4)))).join(" · ");
+  return <PageLayout><section className="archive-page intro-appear"><p className="eyebrow">ARCHIVE / {years || "EMPTY"}</p><h1>所有笔记</h1><p className="archive-lede">共 {posts.length} 篇，全部由本地 Markdown 文件自动整理。</p><PostList posts={posts} /></section></PageLayout>;
 }

@@ -6,6 +6,7 @@ import { PageLayout } from "@/components/SiteChrome";
 import { posts } from "@/lib/blog";
 
 export default function Home() {
+  const latestCount = String(posts.length).padStart(2, "0");
   return (
     <PageLayout>
       <section className="home-intro intro-appear">
@@ -16,7 +17,7 @@ export default function Home() {
           <div className="intro-links"><a href="#rss" aria-label="订阅 RSS"><Rss size={18} /></a><a href="https://github.com" target="_blank" rel="noreferrer" aria-label="GitHub"><Github size={18} /></a><a href="https://linkedin.com" target="_blank" rel="noreferrer" aria-label="LinkedIn"><Linkedin size={18} /></a><a href="mailto:hello@fieldnote.page" aria-label="发送邮件"><Mail size={18} /></a><a href="https://t.me" target="_blank" rel="noreferrer" aria-label="Telegram"><Send size={17} /></a></div>
         </div>
       </section>
-      <section className="home-posts"><div className="section-head intro-appear" style={{ animationDelay: "120ms" }}><p className="eyebrow">LATEST / 06</p><span>最近更新</span></div><PostList posts={posts} animated /><Link href="/posts" className="all-posts-link">查看全部笔记 <ArrowRight size={16} /></Link></section>
+      <section className="home-posts"><div className="section-head intro-appear" style={{ animationDelay: "120ms" }}><p className="eyebrow">LATEST / {latestCount}</p><span>最近更新</span></div><PostList posts={posts} animated /><Link href="/posts" className="all-posts-link">查看全部笔记 <ArrowRight size={16} /></Link></section>
     </PageLayout>
   );
 }
