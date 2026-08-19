@@ -9,13 +9,13 @@ export default function About() {
         <p className="eyebrow">ABOUT / 01</p>
         <div className="about-heading"><h1>写软件，也写下<br />软件之外的事。</h1><span className="status-dot" /></div>
         <div className="about-grid">
-          <img className="about-portrait" src="/manus-storage/fieldnote-avatar_eb41ac62.png" alt="林默的插画头像" />
+          <img className="about-portrait" src="https://github.com/youzhou-ali.png?size=320" alt="钟笠 / zhongli 的头像" />
           <div className="about-copy">
-            <p>你好，我是<strong>林默</strong>，一名独立构建者与长期笔记者。我在这里记录关于工具、界面、工作节奏以及好奇心的零散观察。</p>
+            <p>你好，我是<strong>钟笠 / zhongli</strong>，一名独立构建者与长期笔记者。我在这里记录关于工具、界面、工作节奏以及好奇心的零散观察。</p>
             <p>我相信好产品不是发出最大的声音，而是恰好在需要的时候，安静地完成一件事。</p>
             <div className="about-links">
-              <a href="https://github.com" target="_blank" rel="noreferrer"><Github size={16} /> GitHub <ArrowUpRight size={13} /></a>
-              <a href="mailto:hello@fieldnote.page"><Mail size={16} /> 写封邮件 <ArrowUpRight size={13} /></a>
+              <a href="https://github.com/youzhou-ali" target="_blank" rel="noreferrer"><Github size={16} /> GitHub <ArrowUpRight size={13} /></a>
+              <a href="mailto:upczhongli@163.com"><Mail size={16} /> 写封邮件 <ArrowUpRight size={13} /></a>
               <a href="#rss"><Rss size={16} /> 订阅 RSS <ArrowUpRight size={13} /></a>
             </div>
           </div>
