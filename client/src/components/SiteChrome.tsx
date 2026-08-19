@@ -13,15 +13,19 @@ function NavLink({ href, children }: { href: string; children: ReactNode }) {
   );
 }
 
+function getInitialDarkMode() {
+  try {
+    const stored = localStorage.getItem("zhongli-theme");
+    if (stored) return stored === "dark";
+    return window.matchMedia("(prefers-color-scheme: dark)").matches;
+  } catch {
+    return false;
+  }
+}
+
 export function SiteHeader() {
   const [menuOpen, setMenuOpen] = useState(false);
-  const [isDark, setIsDark] = useState(false);
-
-  useEffect(() => {
-    const stored = localStorage.getItem("zhongli-theme");
-    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-    setIsDark(stored ? stored === "dark" : prefersDark);
-  }, []);
+  const [isDark, setIsDark] = useState(getInitialDarkMode);
 
   useEffect(() => {
     const theme = isDark ? "dark" : "light";
