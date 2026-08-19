@@ -71,12 +71,14 @@ export function restorePostListAnchor(anchor: PostListAnchor | null) {
   if (!anchor) return;
   useManualScrollRestoration();
 
-  // Two frames let React finish layout before restoring the exact title position.
+  // Apply immediately so View Transition captures the destination title at
+  // exactly the same viewport offset as the source list item.
+  applyAnchor(anchor);
+
+  // Then correct after layout and web-font settling to avoid sub-pixel drift.
   requestAnimationFrame(() => {
     requestAnimationFrame(() => applyAnchor(anchor));
   });
-
-  // Web fonts can slightly change line wrapping after first paint, so correct once more.
   document.fonts?.ready.then(() => requestAnimationFrame(() => applyAnchor(anchor))).catch(() => undefined);
 }
 
