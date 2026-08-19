@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 320" role="img" aria-labelledby="title desc">
+  <title id="title">zhongli avatar fallback</title>
+  <desc id="desc">A simple monogram avatar for zhongli.</desc>
+  <rect width="320" height="320" rx="160" fill="#f1f5f9"/>
+  <circle cx="160" cy="160" r="142" fill="#006cac" opacity="0.10"/>
+  <circle cx="160" cy="160" r="112" fill="none" stroke="#006cac" stroke-width="2" opacity="0.28"/>
+  <text x="160" y="178" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="72" font-weight="700" fill="#282728">ZL</text>
+  <circle cx="246" cy="246" r="16" fill="#006cac" stroke="#fdfdfd" stroke-width="7"/>
+</svg>

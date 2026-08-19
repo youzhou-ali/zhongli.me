@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" role="img" aria-labelledby="title desc">
+  <title id="title">zhongli post cover</title>
+  <desc id="desc">Abstract terminal-inspired cover artwork.</desc>
+  <rect width="1200" height="675" fill="#f8fafc"/>
+  <rect x="84" y="72" width="1032" height="531" rx="24" fill="#ffffff" stroke="#d7dde5" stroke-width="3"/>
+  <circle cx="128" cy="116" r="9" fill="#ef4444"/><circle cx="160" cy="116" r="9" fill="#f59e0b"/><circle cx="192" cy="116" r="9" fill="#10b981"/>
+  <g fill="none" stroke="#006cac" stroke-linecap="round">
+    <path d="M154 220h330" stroke-width="18" opacity=".88"/>
+    <path d="M154 274h480" stroke-width="12" opacity=".34"/>
+    <path d="M154 318h390" stroke-width="12" opacity=".24"/>
+    <path d="M154 392h250" stroke-width="18" opacity=".74"/>
+    <path d="M154 446h560" stroke-width="12" opacity=".28"/>
+    <path d="M154 490h430" stroke-width="12" opacity=".20"/>
+  </g>
+  <g transform="translate(780 195)">
+    <rect width="230" height="230" rx="38" fill="#006cac" opacity=".08"/>
+    <path d="M62 85l52 44-52 44M132 173h52" fill="none" stroke="#006cac" stroke-width="17" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>

@@ -1,4 +1,4 @@
-/** 设计提醒：数字打字机日记——文章源文件应保持纯文本、可迁移，并把阅读信息自动整理为稳定索引。 */
+/** Blog content loader. Keep content portable and deployment-safe. */
 export type Post = {
   slug: string;
   title: string;
@@ -21,6 +21,13 @@ const markdownFiles = import.meta.glob("../../../content/posts/*.md", {
 
 function cleanValue(value: string) {
   return value.trim().replace(/^['"]|['"]$/g, "");
+}
+
+function resolveVisual(value?: string) {
+  if (!value) return undefined;
+  // Manus storage URLs only existed in the original authoring environment.
+  // Use a local cover on static hosts such as Cloudflare Pages.
+  return value.startsWith("/manus-storage/") ? "/post-cover.svg" : value;
 }
 
 function parseFrontmatter(raw: string, filePath: string): Post {
@@ -55,7 +62,7 @@ function parseFrontmatter(raw: string, filePath: string): Post {
     readingTime: `${readingMinutes} 分钟`,
     summary: frontmatter.summary || "这是一篇尚未添加摘要的笔记。",
     category: frontmatter.category || "笔记",
-    visual: frontmatter.visual,
+    visual: resolveVisual(frontmatter.visual),
     content,
   };
 }
@@ -65,8 +72,6 @@ export const posts = Object.entries(markdownFiles)
   .sort((first, second) => second.date.localeCompare(first.date));
 
 export const socialLinks = [
-  { label: "GitHub", href: "https://github.com" },
-  { label: "X", href: "https://x.com" },
-  { label: "即刻", href: "https://okjike.com" },
-  { label: "邮件", href: "mailto:hello@fieldnote.page" },
+  { label: "GitHub", href: "https://github.com/youzhou-ali" },
+  { label: "Email", href: "mailto:upczhongli@163.com" },
 ];
