@@ -6,8 +6,6 @@ import { posts } from "@/lib/blog";
 import { restorePostListAnchorForPath } from "@/lib/postTransition";
 import { useEffect } from "react";
 
-const avatarUrl = "https://avatars.githubusercontent.com/u/55781835?v=4";
-
 export default function Home() {
   useEffect(() => { restorePostListAnchorForPath("/"); }, []);
 
@@ -15,11 +13,7 @@ export default function Home() {
     <PageLayout>
       <section id="hero" className="home-intro intro-appear">
         <Link href="/about" className="portrait-wrap" aria-label="关于 zhongli">
-          <img
-            src={avatarUrl}
-            alt="钟笠 / zhongli"
-            onError={(event) => { event.currentTarget.src = "/avatar.svg"; }}
-          />
+          <img src="/avatar.svg" alt="钟笠 / zhongli" width="160" height="160" fetchPriority="high" />
         </Link>
         <div className="intro-copy">
           <h1>Hi, I'm <em>@zhongli</em>.</h1>
