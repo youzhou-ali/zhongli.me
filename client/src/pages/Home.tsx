@@ -4,9 +4,12 @@ import { Link } from "wouter";
 import PostList from "@/components/PostList";
 import { PageLayout } from "@/components/SiteChrome";
 import { posts } from "@/lib/blog";
+import { restorePostListAnchorForPath } from "@/lib/postTransition";
+import { useEffect } from "react";
 
 export default function Home() {
   const latestCount = String(posts.length).padStart(2, "0");
+  useEffect(() => { restorePostListAnchorForPath("/"); }, []);
   return (
     <PageLayout>
       <section className="home-intro intro-appear">

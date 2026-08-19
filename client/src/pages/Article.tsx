@@ -5,18 +5,20 @@ import { Link, useLocation, useRoute } from "wouter";
 import ReadingProgress from "@/components/ReadingProgress";
 import { PageLayout } from "@/components/SiteChrome";
 import { posts } from "@/lib/blog";
-import { navigateWithPostTransition } from "@/lib/postTransition";
+import { getPostListAnchor, navigateWithPostTransition, restorePostListAnchor } from "@/lib/postTransition";
 
 export default function Article() {
   const [, params] = useRoute("/posts/:slug");
   const [, setLocation] = useLocation();
   const post = posts.find((item) => item.slug === params?.slug);
+  const listAnchor = getPostListAnchor();
+  const returnPath = listAnchor?.path || "/posts";
   if (!post) return <PageLayout><section className="not-found-page"><p className="eyebrow">404 / LOST NOTE</p><h1>这条笔记不在这里。</h1><Link href="/posts" className="back-link"><ArrowLeft size={16} /> 回到文章索引</Link></section></PageLayout>;
   return (
     <PageLayout>
       <ReadingProgress readingTime={post.readingTime} />
       <article className="article-page article-detail-enter" id="article-reading-target">
-        <Link href="/posts" className="back-link" onClick={(event) => navigateWithPostTransition(event, "/posts", "backward", setLocation)}><ArrowLeft size={16} /> 全部笔记</Link>
+        <Link href={returnPath} className="back-link" onClick={(event) => navigateWithPostTransition(event, returnPath, "backward", setLocation, { onAfterNavigate: () => restorePostListAnchor(listAnchor) })}><ArrowLeft size={16} /> 全部笔记</Link>
         <p className="eyebrow">{post.category}</p><h1 className="article-transition-title" style={{ viewTransitionName: `post-title-${post.slug}` }}>{post.title}</h1>
         <div className="article-meta"><span><CalendarDays size={14} /> {post.date}</span><i>·</i><span><Clock3 size={14} /> 预计 {post.readingTime}</span></div>
         <p className="article-dek">{post.summary}</p>
