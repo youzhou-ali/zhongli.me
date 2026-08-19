@@ -18,6 +18,9 @@ export default function Home() {
           <img
             src={avatarUrl}
             alt="钟笠 / zhongli"
+            width="160"
+            height="160"
+            fetchPriority="high"
             onError={(event) => { event.currentTarget.src = "/avatar.svg"; }}
           />
         </Link>

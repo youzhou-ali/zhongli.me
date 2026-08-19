@@ -14,6 +14,10 @@ export default function About() {
             className="about-portrait"
             src={avatarUrl}
             alt="钟笠 / zhongli"
+            width="200"
+            height="200"
+            loading="eager"
+            decoding="async"
             onError={(event) => { event.currentTarget.src = "/avatar.svg"; }}
           />
           <div className="about-copy">
