@@ -7,6 +7,14 @@
     <meta name="description" content="zhongli：钟笠关于技术、工具、软件工程与工作方式的个人日志。" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <title>zhongli · 钟笠的个人日志</title>
+    <script>
+      try {
+        const stored = localStorage.getItem("zhongli-theme");
+        const dark = stored ? stored === "dark" : window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.dataset.theme = dark ? "dark" : "light";
+        document.documentElement.classList.toggle("dark", dark);
+      } catch {}
+    </script>
   </head>
   <body>
     <div id="root"></div>
