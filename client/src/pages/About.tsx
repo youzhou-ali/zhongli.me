@@ -1,8 +1,6 @@
 import { ArrowUpRight, Github, Mail } from "lucide-react";
 import { PageLayout } from "@/components/SiteChrome";
 
-const avatarUrl = "https://avatars.githubusercontent.com/u/55781835?v=4";
-
 export default function About() {
   return (
     <PageLayout>
@@ -12,9 +10,12 @@ export default function About() {
         <div className="about-grid">
           <img
             className="about-portrait"
-            src={avatarUrl}
+            src="/avatar.svg"
             alt="钟笠 / zhongli"
-            onError={(event) => { event.currentTarget.src = "/avatar.svg"; }}
+            width="200"
+            height="200"
+            loading="eager"
+            decoding="async"
           />
           <div className="about-copy">
             <p>你好，我是<strong>钟笠 / zhongli</strong>。这里记录技术、工具、工作方式，以及一些值得反复想一想的问题。</p>
