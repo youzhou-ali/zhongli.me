@@ -13,7 +13,7 @@ export type Post = {
 
 type Frontmatter = Record<string, string>;
 
-const markdownFiles = import.meta.glob("../../../content/posts/*.md", {
+const markdownFiles = import.meta.glob("../content/blog/**/*.md", {
   eager: true,
   query: "?raw",
   import: "default",
@@ -69,7 +69,23 @@ function parseFrontmatter(raw: string, filePath: string): Post {
 
 export const posts = Object.entries(markdownFiles)
   .map(([path, raw]) => parseFrontmatter(raw, path))
-  .sort((first, second) => second.date.localeCompare(first.date));
+  .sort((first, second) => postDateValue(second.date) - postDateValue(first.date));
+
+export type PostDateParts = {
+  year: number;
+  month: number;
+  day: number;
+};
+
+export function getPostDateParts(date: string): PostDateParts {
+  const [year = 0, month = 1, day = 1] = date.split(/[./-]/).map(Number);
+  return { year, month, day };
+}
+
+function postDateValue(date: string) {
+  const { year, month, day } = getPostDateParts(date);
+  return new Date(year, month - 1, day).getTime();
+}
 
 export const socialLinks = [
   { label: "GitHub", href: "https://github.com/youzhou-ali" },
