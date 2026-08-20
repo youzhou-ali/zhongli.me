@@ -114,7 +114,12 @@ export default function ArticleTableOfContents({ content }: { content: string })
                 href={`#${heading.id}`}
                 className={activeId === heading.id ? "is-active" : undefined}
                 aria-current={activeId === heading.id ? "location" : undefined}
-                onClick={() => {
+                onClick={(event) => {
+                  event.preventDefault();
+                  const url = new URL(window.location.href);
+                  url.hash = heading.id;
+                  history.replaceState(history.state, "", `${url.pathname}${url.search}${url.hash}`);
+                  document.getElementById(heading.id)?.scrollIntoView();
                   setActiveId(heading.id);
                   if (!window.matchMedia("(min-width: 1360px)").matches) setIsOpen(false);
                 }}

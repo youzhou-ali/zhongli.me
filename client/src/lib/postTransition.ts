@@ -20,6 +20,8 @@ type PostTransitionOptions = {
 
 const postListAnchorKey = "zhongli-post-list-anchor";
 const anchorMaxAgeMs = 6 * 60 * 60 * 1000;
+let browserBackInterceptorInstalled = false;
+let redispatchingPopState = false;
 
 function useManualScrollRestoration() {
   if (typeof history !== "undefined" && "scrollRestoration" in history) {
@@ -88,6 +90,52 @@ export function restorePostListAnchorForPath(path: string) {
   restorePostListAnchor(anchor);
 }
 
+function runPostTransition(direction: "forward" | "backward", updateRoute: () => void) {
+  const transitionDocument = document as ViewTransitionDocument;
+  const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (!transitionDocument.startViewTransition || prefersReducedMotion) {
+    updateRoute();
+    return;
+  }
+
+  document.documentElement.dataset.postTransition = direction;
+  const transition = transitionDocument.startViewTransition(updateRoute);
+  transition.finished.finally(() => {
+    delete document.documentElement.dataset.postTransition;
+  });
+}
+
+export function installPostBrowserBackTransition() {
+  if (browserBackInterceptorInstalled) return;
+  browserBackInterceptorInstalled = true;
+
+  window.addEventListener("popstate", (event) => {
+    const article = document.getElementById("article-reading-target");
+    if (redispatchingPopState || !article) return;
+
+    const anchor = getPostListAnchor();
+    if (!anchor || anchor.slug !== article.dataset.postSlug || anchor.path !== window.location.pathname) return;
+
+    // The browser has already moved to the previous history entry. Stop the
+    // router's normal listener, then replay the same event inside the View
+    // Transition callback so browser Back matches the in-page Go back action.
+    event.stopImmediatePropagation();
+    useManualScrollRestoration();
+
+    runPostTransition("backward", () => {
+      redispatchingPopState = true;
+      try {
+        flushSync(() => {
+          window.dispatchEvent(new PopStateEvent("popstate", { state: event.state }));
+        });
+      } finally {
+        redispatchingPopState = false;
+      }
+      restorePostListAnchor(anchor);
+    });
+  }, { capture: true });
+}
+
 export function navigateWithPostTransition(
   event: MouseEvent<HTMLAnchorElement>,
   targetPath: string,
@@ -107,16 +155,5 @@ export function navigateWithPostTransition(
     options.onAfterNavigate?.();
   };
 
-  const transitionDocument = document as ViewTransitionDocument;
-  const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  if (!transitionDocument.startViewTransition || prefersReducedMotion) {
-    updateRoute();
-    return;
-  }
-
-  document.documentElement.dataset.postTransition = direction;
-  const transition = transitionDocument.startViewTransition(updateRoute);
-  transition.finished.finally(() => {
-    delete document.documentElement.dataset.postTransition;
-  });
+  runPostTransition(direction, updateRoute);
 }

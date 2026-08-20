@@ -38,7 +38,7 @@ export default function Article() {
   return (
     <PageLayout>
       <ReadingProgress readingTime={post.readingTime} />
-      <article className="article-page" id="article-reading-target">
+      <article className="article-page" id="article-reading-target" data-post-slug={post.slug}>
         <Link href={returnPath} className="back-link" onClick={(event) => navigateWithPostTransition(event, returnPath, "backward", setLocation, { onAfterNavigate: () => restorePostListAnchor(listAnchor) })}><ArrowLeft size={16} /> Go back</Link>
         <p className="eyebrow">{post.category}</p>
         <h1 style={{ viewTransitionName: `post-title-${post.slug}` }}>{post.title}</h1>
