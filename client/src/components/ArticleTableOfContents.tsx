@@ -1,4 +1,5 @@
-import { type CSSProperties, useEffect, useMemo } from "react";
+import { ListTree, PanelRightClose } from "lucide-react";
+import { type CSSProperties, useEffect, useMemo, useState } from "react";
 
 type ArticleHeading = {
   depth: number;
@@ -59,32 +60,71 @@ export function extractArticleHeadings(content: string): ArticleHeading[] {
 
 export default function ArticleTableOfContents({ content }: { content: string }) {
   const headings = useMemo(() => extractArticleHeadings(content), [content]);
+  const [activeId, setActiveId] = useState("");
+  const [isOpen, setIsOpen] = useState(() => window.matchMedia("(min-width: 1360px)").matches);
 
   useEffect(() => {
-    const renderedHeadings = document.querySelectorAll<HTMLElement>("#article-reading-target .article-body h2, #article-reading-target .article-body h3, #article-reading-target .article-body h4, #article-reading-target .article-body h5, #article-reading-target .article-body h6");
+    const renderedHeadings = Array.from(document.querySelectorAll<HTMLElement>("#article-reading-target .article-body h2, #article-reading-target .article-body h3, #article-reading-target .article-body h4, #article-reading-target .article-body h5, #article-reading-target .article-body h6"));
     renderedHeadings.forEach((heading, index) => {
       const articleHeading = headings[index];
       if (articleHeading) heading.id = articleHeading.id;
     });
 
-    const hash = decodeURIComponent(window.location.hash.slice(1));
-    if (hash) document.getElementById(hash)?.scrollIntoView();
+    const updateActiveHeading = () => {
+      let currentId = renderedHeadings[0]?.id ?? "";
+      renderedHeadings.forEach((heading) => {
+        if (heading.getBoundingClientRect().top <= 140) currentId = heading.id;
+      });
+      setActiveId(currentId);
+    };
+
+    try {
+      const hash = decodeURIComponent(window.location.hash.slice(1));
+      if (hash) document.getElementById(hash)?.scrollIntoView();
+    } catch {
+      // Ignore malformed URL hashes and keep the first heading active.
+    }
+
+    updateActiveHeading();
+    window.addEventListener("scroll", updateActiveHeading, { passive: true });
+    return () => window.removeEventListener("scroll", updateActiveHeading);
   }, [headings]);
 
   if (!headings.length) return null;
 
   return (
-    <nav className="article-toc" aria-label="文章目录">
-      <details open={headings.length <= 12}>
-        <summary>目录 <span>{headings.length}</span></summary>
+    <aside className={`article-toc ${isOpen ? "is-open" : "is-collapsed"}`} aria-label="文章目录导航">
+      <button
+        type="button"
+        className="article-toc-toggle"
+        aria-expanded={isOpen}
+        aria-controls="article-toc-panel"
+        title={isOpen ? "收起目录" : "展开目录"}
+        onClick={() => setIsOpen((value) => !value)}
+      >
+        {isOpen ? <PanelRightClose size={18} aria-hidden="true" /> : <ListTree size={18} aria-hidden="true" />}
+        <span className="sr-only">{isOpen ? "收起目录" : "展开目录"}</span>
+      </button>
+      <nav id="article-toc-panel" className="article-toc-panel" aria-label="Markdown 标题目录">
+        <div className="article-toc-heading">目录 <span>{headings.length}</span></div>
         <ol>
           {headings.map((heading) => (
             <li key={heading.id} style={{ "--heading-depth": heading.depth } as CSSProperties}>
-              <a href={`#${heading.id}`}>{heading.text}</a>
+              <a
+                href={`#${heading.id}`}
+                className={activeId === heading.id ? "is-active" : undefined}
+                aria-current={activeId === heading.id ? "location" : undefined}
+                onClick={() => {
+                  setActiveId(heading.id);
+                  if (!window.matchMedia("(min-width: 1360px)").matches) setIsOpen(false);
+                }}
+              >
+                {heading.text}
+              </a>
             </li>
           ))}
         </ol>
-      </details>
-    </nav>
+      </nav>
+    </aside>
   );
 }
