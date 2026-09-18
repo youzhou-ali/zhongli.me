@@ -1,16 +1,18 @@
 ---
-title: 从 Token 统计到预付费 Credits：Cube 的最终计量与账务方案
+title: 从 Token 统计到预付费 Credits：Cube 的计量与账务方案
 slug: provider-attempt-credit-accounting
 date: 2026.08.21
 category: 构建
-summary: Cube 只对最终成功 Model Call 的有效 Usage 收取 Credits，并以独立账务实体实现准入、扣费、充值、余额和 Statement。
+summary: Cube 的成功 Model Call 计费方案，以及适配最新 main 的 Workload 归属、话题生命周期、模型池准入与账务展示边界。
 ---
 
-> 本文是 [Cube Issue #18](https://github.com/mindshake-ai/cube/issues/18) 的最终技术方案，不代表功能已经全部上线。
+> 更新于 **2026-09-18**。本文以 [ADR-0051](https://github.com/mindshake-ai/cube/blob/23a03113bea456e425511cbd4b32860d5b4459d1/docs/adr/0051-charge-only-successful-model-call-usage.md) 的成功 Model Call 计费规则为基础，并纳入最新 main 的兼容性复核和已确认取舍。
 >
-> v1 使用默认关闭的 Mock Credits 购买；真实支付渠道后续由 [Issue #22](https://github.com/mindshake-ai/cube/issues/22) 接入。
+> 实现基线：[PR #23](https://github.com/mindshake-ai/cube/pull/23) 的 `23a0311`；复核目标：main `527ab87`，共同基点 `5545590`。原方案已经在 PR 中实现，最新 main 的合并适配和回归验证尚未完成，本文不表示功能已全部上线。
 >
-> 三张架构图的 [Draw.io 源文件](/assets/cube-credits/cube-credits.drawio) 可以直接下载和继续编辑。
+> [Issue #18](https://github.com/mindshake-ai/cube/issues/18) 保留为历史背景。v1 使用默认关闭的 Mock Credits 购买；真实支付渠道由后续 [Issue #22](https://github.com/mindshake-ai/cube/issues/22) 接入。
+>
+> 三张架构图的 [Draw.io 源文件](/assets/cube-credits/cube-credits.drawio) 可以下载和编辑。文章沿用原链接，早期逐 Provider Attempt 收费方案已被替代。
 
 ## 1. 摘要
 
@@ -66,6 +68,7 @@ Core 在模型调用结束时产生 `ModelCallEndEvent`。该事件是 Run 总 T
 - `turn_id`
 - `member_code`
 - `llm_router_code`
+- `routed_llm_group_code` 与最终 `llm_group_code`
 - 最终 `llm_code`
 - `model_id`
 - 四项 Token
@@ -207,7 +210,7 @@ Frontend 负责：
 | 扣费详细流程 | `/assets/cube-credits/model-call-sequence.png` |
 | Mock 充值与 Credits 发放 | `/assets/cube-credits/mock-fulfillment.png` |
 
-正文使用同源 PNG，避免不同部署环境对 SVG 的安全过滤差异；同目录同时保留 SVG 和三页 Draw.io 源文件。
+本文图片由博客自身的 `/assets/cube-credits/` 路径提供。SVG 作为矢量备用，不作为正文的唯一图片来源。
 
 ## 7. 收费配置与精度
 
@@ -215,7 +218,7 @@ Frontend 负责：
 
 不新增独立“模型定价”后台。收费字段放在现有 Agency LLM Configuration 中，并复用当前保存权限。
 
-建议由 `cube.platform.agency.LLMConfigEntry` 增加 Platform-owned 字段；Platform 构造 Core `LLMConfig` 时只提取模型客户端需要的字段，避免 Credits 语义进入 Core。
+收费字段由 `cube.platform.agency.LLMConfigEntry` 持有。`AgencyLLMService._materialize_config` 先解析 Agency Secret，再按 `LLMConfig.model_fields` 提取客户端字段；收费开关、费率及 Secret 引用不进入 Core `LLMConfig` 或 Provider 参数。
 
 持久化字段：
 
@@ -602,19 +605,24 @@ Playground 根操作流程：
 → 提交根操作
 ```
 
-`DeliverMessage.workload_id` 是 server/cluster 内部命令字段，不是 `UserMessage.metadata`。最小可落地接口为：
+`DeliverMessage.workload_id` 是 server/cluster 内部命令字段，不是 `UserMessage.metadata`。当前持久化 Thread 路径为：
 
 ```text
 ChatSessionService.send(..., workload_id=...)
 → DeliverMessage.workload_id
 → local/cluster command codec
 → RuntimeSessionCommandExecutor
-→ BaseSession.receive(message, delivery_context=SessionDeliveryContext(workload_id))
-→ _prepare_receive / concrete session batch builder
-→ 本次 receive 创建的全部 AgentRunRequest.workload_id
+→ SessionRuntime.receive(message, delivery_context=SessionDeliveryContext(workload_id=...))
+→ SessionMessageDO.workload_id（与消息在同一事务保存）
+→ ThreadDeliveryHandle（消息已持久化，Thread 异步处理）
+→ ThreadInboxItem.workload_id
+→ ThreadTransactionContext.workload_id
+→ ThreadRuntime 提交 AgentRunRequest.workload_id
 ```
 
-`SessionDeliveryContext` 是 Platform 内部、不可序列化到 transcript 的受信任调用上下文。`DeliverMessage.workload_id` 仅允许 `mode=RECEIVE`；`STEER` 和 `FOLLOW_UP` 若携带该字段必须由命令模型拒绝，它们从目标 Run 继承既有 Workload。字段本身为可选，保证新 worker 可以解码旧 backend 发出的 command；但 Playground 新根操作必须先创建 Assignment 后再提供非空值。
+`receive` 返回 durable `ThreadDeliveryHandle`，不直接返回 Runs；`wait_processed()` 等待 Thread 处理该消息并提交后续工作，不等待模型执行结束。`SessionDeliveryContext` 不进入公开消息 payload 或 metadata，其 `workload_id` 保存于 `cube_session_message` 的独立可空列。Thread 从 durable inbox 重新读取该列，因此异步处理或进程重启不会丢失已受理消息的付款上下文。重复消息不得替换首次保存的 Workload。
+
+`DeliverMessage.workload_id` 仅允许 `mode=RECEIVE`；`STEER` 和 `FOLLOW_UP` 若携带该字段必须由命令模型拒绝，它们从目标 Run 继承既有 Workload。字段本身为可选，保证新 worker 可以解码旧 backend 发出的 command；但 Playground 新根操作必须先创建 Assignment 后再提供非空值。
 
 浏览器请求体、query、WebSocket payload 中不得接受 `workload_id` 或 `billing_subject_ref`。如果协议需要回显 Workload，只能回显服务端已经创建的 ID，不能把回显值当成下一次根操作的可信输入。若 Assignment 已创建但 command 最终未被接受，允许留下没有 Charge 的 Assignment；v1 不为这种无害孤儿记录增加清理状态机。
 
@@ -626,32 +634,35 @@ Core/Platform 需要把可选的 `workload_id: str | None = None` 显式贯穿�
 
 ```text
 DeliverMessage.workload_id
+→ SessionMessageDO.workload_id
+→ ThreadInboxItem / ThreadTransactionContext
 → AgentRunRequest
 → AgentRunState JSON payload
 → AgentRunContext
 → ToolRunContext
 → ToolCallContext
 → Tool invocation
-→ SubAgent invocation
+→ SubAgentInvocationGrant（当前调用的 live grant）
 → child AgentRunRequest
-→ Workflow invocation
 → background task durable payload
 → background continuation
 ```
 
-`AgentRunStateDO` 不增加物理列，继续在现有 `payload` JSON 保存该字段。
+`AgentRunStateDO` 不增加物理列，继续在现有 `payload` JSON 保存该字段。SubAgent 同一 durable Session 的每次调用使用各自 live grant 的 Workload；不能从旧 invocation 的 transcript 快照重新构造授权。
 
-Task 可以跨人工介入和进程重启，因此 `TaskRuntimeState` JSON 也必须保存 `workload_id`：
+Task 可以跨人工介入和进程重启，因此首次启动把 `workload_id` 固定在 `cube_task.state_json` 的 `TaskState` 中：
 
 ```text
-task_start 固定 workload_id
-→ phase run
-→ intervention
-→ resume
-→ review/rework run
+TaskService.operate(start) / TaskOperate(operate="start")
+→ TaskStartMessage 的受信任 delivery context
+→ TaskMainThreadRuntime._start 保存 TaskState.workload_id
+→ Phase / 主 Thread 对话 / Workflow step 的 AgentRunRequest
+→ 人工指导、Review rework、pause/restart 继续继承
 ```
 
-恢复、回答人工问题和后续 Review Run 只能继承，不得按当前操作者重新选择付款人。
+`TaskOperate` 只在 `start` 时通过 `SessionToolAccess.issue_root_workload()` 为受信任的 triggering human 创建新 Workload，不接受 Agent 指定付款人，也不复用来源 Chat Run 的 Workload。后续 Task Run 从持久化 `TaskState` 读取归属，恢复、回答人工问题和 Review 不得按当前操作者重新选择付款人。
+
+Workflow 现在属于 Task Phase 管理的 Workflow Thread，其步骤与恢复执行继承同一 Task Workload。旧 `workflow_run` ToolMount Session 路径已删除，不再作为账务传播入口。内部 `TaskState.workload_id` 不进入 Task 工具结果、通知或前端状态投影。
 
 ### 9.3 Session 控制权限
 
@@ -660,7 +671,9 @@ Credits 不改变现有 Session 权限。例如 A 发起 Workload，B 是同一 
 - B 的 follow-up/steer 若仍属于该活动 Workload，继续扣 A 的 Credits。
 - B 可以按原权限 cancel，cancel 只停止执行，不转移付款人、不产生额外费用。
 - 前一 Workload 结束后，B 新发起根 Run 时创建新的 Workload，由 B 付费。
-- `task_create` 只创建 pending Task；实际 `task_start` 才由启动者创建 Workload。
+- `TaskCreate` 只创建 pending Task；实际 `TaskOperate(start)` 或 `TaskService.operate(start)` 才创建 Workload。
+
+未显式指定 Agent、且话题没有可用默认 Agent 的根消息，允许沿用现有策略自动或随机选择话题内 Agent。发送者授权这次自动响应，即使不同 Agent 使用不同价格的模型，仍由该根消息的 Workload 付款人按最终实际模型及调用开始时费率承担费用；不增加先选 Agent 或逐次确认价格的门槛。responder 选择与 Credits 准入分别负责执行目标和付款资格，排队/恢复不得重新随机或改写既有付款归属。该产品取舍于 2026-09-18 兼容性复核时确认。
 
 ## 10. Hook 输入与 runtime-local coordinator
 
@@ -673,10 +686,10 @@ workload_id: str | None
 turn_id: str | None
 source: assistant_reply | compaction | tool_llm | other
 labels: dict[str, str]
-client_kind: direct | router
+client_kind: direct | group | router
 ```
 
-原有 `model` 字段继续承载 client code：direct 时为 `llm_code`，router 时为 `llm_router_code`。
+原有 `model` 字段继续承载 client code：direct 时为 `llm_code`，group 时为 `llm_group_code`，router 时为 `llm_router_code`。Hook 的 `labels` 来自当前 Run 的 `scene_route_labels`；compaction 还会合并本次 request 的场景标签。`deployment_tags` 继续单独交给 LiteLLM 调度，不转换为业务 labels。
 
 `PostModelCallInput` 增加：
 
@@ -716,7 +729,7 @@ Settlement 失败后不把快照放回 coordinator，因此该次调用永久 wr
 
 ### 10.3 快照内容
 
-直连和 Router 都保存候选 marker。所有候选，包括免费候选，都必须进入快照：
+直连、模型池和 Router 都保存候选 marker。所有候选，包括免费候选，都必须进入快照：
 
 ```text
 workload_id
@@ -732,7 +745,7 @@ candidates:
     四项 rate（paid 时必有）
 ```
 
-保存免费 marker 很重要：最终 Router 命中免费候选时，`CreditChargeHook` 可以明确判断“调用前已确认免费”，而不是把“找不到费率”误当免费。
+`resolved_initial_llm_code` 在直连时保存配置 code，在 group/router 时保存初始模型池 code；`candidates` 始终以实际 deployment 的 `llm_code` 为键。保存免费 marker 很重要：最终命中免费候选时，`CreditChargeHook` 可以明确判断“调用前已确认免费”，而不是把“找不到费率”误当免费。
 
 快照不持久化、不冻结 Credits、不进入 Core。进程崩溃时快照丢失，该次调用不收费。
 
@@ -743,8 +756,8 @@ candidates:
 `CreditAdmissionHook` 监听现有 `PreModelCall`，职责：
 
 1. 从 Platform runtime/session 可信上下文取得 `agency_code`。
-2. 根据 `client_kind`、client code 和 labels 解析本次直连配置或 Router 初始配置。
-3. 计算本次初始配置及 fallback 链中的可达候选。
+2. 根据 `client_kind`、client code 和 labels 解析直连配置、绑定模型池或 Router 初始模型池。
+3. 直连使用单个配置；group/router 使用本次初始模型池及 fallback 模型池内的全部 deployments。
 4. 读取所有候选当前收费状态，并构造完整 snapshot markers。
 5. 如果存在付费候选，读取 Workload Assignment 与 Credit Balance。
 6. 校验所有付费候选四项 Rate 完整且非全零。
@@ -762,10 +775,10 @@ candidates:
   - Balance 必须大于零；缺行按零处理。
   - 四项 Rate 必须完整、非负且非全零。
 
-### 11.3 Router 规则
+### 11.3 模型池与 Router 规则
 
-1. 使用本次业务 labels 解析初始 `llm_code`。
-2. 只检查初始配置与其 fallback 链，不检查不会命中的其他 rules 分支。
+1. `group` 直接使用绑定的 `llm_group_code`；`router` 使用 `scene_route_labels` 和 `resolve_model_group` 选择初始模型池。
+2. `group` 检查该池内全部 deployments；`router` 检查所选初始池与 `fallback_groups` 中的全部 deployments，不检查不会命中的其他 rules 分支。候选池没有部署时拒绝准入。
 3. 所有可达候选免费时，不检查余额，但仍保存全部 free markers。
 4. 任一候选付费时：
    - 必须存在 Assignment。
@@ -774,7 +787,7 @@ candidates:
 5. 最终实际命中免费候选时不收费。
 6. 最终实际命中付费候选时使用调用前快照费率。
 
-因此，免费 primary 只要存在付费 fallback，余额为零时仍拒绝调用；这是为了避免内部 fallback 绕过付费准入。
+因此，初始池免费但 fallback 池含有付费部署时，余额为零仍拒绝调用。当前准入保守地纳入候选池内全部 deployments，不复制 LiteLLM 的 `deployment_tags` 筛选算法；即使请求 tags 最终只会命中免费部署，只要同一候选池内存在付费部署，也要求正余额。全部候选部署免费时不要求余额。
 
 ### 11.4 准入错误
 
@@ -885,13 +898,13 @@ Charge 已提交
 
 ## 13. Router 最终模型归因
 
-Router 调用开始时：
+模型池或 Router 调用开始时：
 
 ```text
 call_info.llm_code = None
 ```
 
-不得使用 primary/default 预填最终配置。实际归因规则：
+不得使用 `primary_group` / `default_group` 中某个部署预填最终配置。`routed_llm_group_code` 记录场景路由选中的初始池，`llm_group_code` 随最终 deployment 更新，两个维度用于 Metric 分析；收费仍由最终 `actual_llm_code` 选择费率。实际归因规则：
 
 - 从成功 response 或 chunks 的 deployment identity 回填 `actual_llm_code`。
 - 不能只检查第一个 chunk；第一个 chunk 缺失时继续检查后续 chunks，直到确认或调用结束。
@@ -924,7 +937,7 @@ PreLLMCompact
      workload_id,
      turn_id,
      client_kind,
-     labels=runtime.llm_labels + request.labels
+     labels=runtime.scene_route_labels + request.scene_route_labels
    )
 → CreditAdmissionHook
 → provider
@@ -1055,7 +1068,7 @@ Statement 是预付费 Credits 明细，不是后付费 Invoice。唯一 Credits
 - 正数：购买入账。
 - 负数：Model Call 消费。
 
-Statement 使用 `posted_at` 决定周期。月底开始、次月结算的调用进入次月。
+Statement 使用 `posted_at` 决定周期，并按查询者设备报告的 IANA 时区划分本地自然月；服务端把本地月初/月末转换为 UTC 查询边界，`posted_at` 仍以 UTC 保存。月底开始、次月结算的调用按结算发生时的本地月份进入 Statement。
 
 默认展示：
 
@@ -1067,6 +1080,8 @@ Workload Charge
 ```
 
 当前周期内同一 Workload 的负 Transactions 默认聚合为 Workload Charge，可以展开到 ModelCallCharge，展示最终模型、四项 Token、四项 Rate 与 Customer Charge。
+
+Statement 以购买条目或聚合后的 Workload Charge 为分页单位，默认每页 20 条、按条目最后入账时间倒序；一个 Workload 不跨页拆分。Payment History 独立按付款创建时间倒序分页，默认同样每页 20 条。
 
 不进入 Statement：
 
@@ -1144,7 +1159,7 @@ CreditAdmissionHook
 
 不增加 Core `error_code` 字段或 Credits 专用异常模型。
 
-同步、能够等待准入结果的入口可以返回 HTTP `402`。异步 Chat 的 `202` 或 WebSocket ACK 只表示命令和 Run 已被接受；后续准入失败时，Run 进入现有 error 终态。
+同步、能够等待准入结果的入口可以返回 HTTP `402`。异步 Chat 的 `202` 或 WebSocket ACK 只表示消息已经被接受；`dispatch_status` 区分等待 Thread 处理与后续工作已提交，不代表模型准入通过或结算成功。后续准入失败时，Run 进入现有 error 终态。
 
 ### 19.2 共享 Session
 
@@ -1157,11 +1172,12 @@ CreditAdmissionHook
 
 相同过滤必须用于实时事件、重连恢复和历史 Run 查询。浏览器不得收到 `billing_subject_ref`。
 
-现有 Playground 投影需要做三处明确改动：
+Playground 投影需要覆盖以下入口：
 
 - `session_history_response`、Run detail 和 activity snapshot 接收当前 `viewer_user_code`，批量按 Runs 的 `workload_id` 查询 Assignment 后再投影；响应不返回 `workload_id`。
 - live broadcast 不能继续为整个 Session 生成一份 frame 后原样 fanout。Run lifecycle frame 必须按 `connection.user_code` 分别生成，付款人和非付款人得到不同 `reason/action`。
 - WebSocket `watch_session`、重连恢复和 HTTP 历史必须复用同一个 viewer-aware projector，避免只修实时事件后从历史接口泄露财务原因。
+- main 新增的 `GET /{session_id}/activity/runs` / `session_agent_run_history` 也必须传递 Account `viewer_user_code` 并查询 Assignment；Thread 可读性检查使用的 `user_member_code` 不能代替付款人身份。`_agent_run_history_item` 中的 `run_view` 与消息投影复用相同上下文，Agent 运行历史 UI 按 `action` 展示购买入口。缺少上下文时保持通用错误，不猜测付款人。该项是 `527ab87` 兼容性复核发现的待接入路径，尚未由当前 PR 实现。
 
 产品不显示持续 Banner、低余额 Toast 或持久通知；余额在个人设置中按需查看，只有实际发起失败时展示错误。
 
@@ -1173,6 +1189,16 @@ v1 不新增角色或双重权限逻辑：
 - 普通 Account 只能查看自己的 Balance、Statement 和 Payment History。
 - Agency owner/admin 可按既有授权查看 Agency 聚合 Usage/Credits，但不能查看其他 Account 的个人余额和支付记录。
 - Platform Admin 可查看全局无内容诊断。
+
+管理员聚合只提供以下两个只读入口：
+
+- `GET /api/agencies/{agency_code}/accounting/summary`：复用 Agency owner/admin 权限，按该 Agency 的 Sessions 聚合。
+- `GET /api/platform/accounting/summary`：复用 Platform Admin 权限，聚合全局数据。
+
+两个响应都只包含 `call_count`、四项 Token、`charge_count` 与十进制字符串
+`charged_microcredits`。Usage 来自独立的 `LLMCallMetric`，Credits 来自
+`ModelCallCharge.customer_charge_microcredits`；响应不接受付款人或 Session
+过滤，也不提供 Account、Balance、Payment、Session、Run、Workload、模型或内容下钻。
 
 所有 accounting API 不返回 prompt、response、message 内容、tool payload、API Key、credential 或无权限的内部诊断。
 
@@ -1216,7 +1242,9 @@ Playground 根操作必须来自已认证 Account。CLI 和未启用 Billing 的
 ## 22. 数据生命周期
 
 - WorkloadBillingAssignment、ModelCallCharge 和 CreditTransaction v1 无限期保留。
-- 删除 Message、Session、Run、Channel、Agency、Agent 或 LLM Configuration 不得级联删除账务事实。
+- 删除 Message、Thread、Session、Run、Channel、Agency、Agent 或 LLM Configuration 不得级联删除账务事实。
+- 主 Thread 归档和轮换保留旧 Run 的归属；恢复已有话题不重新分配历史费用，新根输入照常创建新 Workload。Thread 成员变化不能改写排队中 Run 的 Workload。
+- Thread 硬删除会清理消息、Run 和 `LLMCallMetric`，个人 Statement 仍从 CreditTransaction 与 ModelCallCharge 查询，Balance 仍可从 Transaction 重建。运营 Usage 的调用数和 Token 可以随删除减少，已消费 Credits 保持不变；两者不是同一保留口径，不为对齐统计而删账或退款。
 - `source_msg_id`、`session_id` 和 `run_id` 是可能失效的来源快照，不建立运行时对象外键。
 - Runtime accounting 只建立 Charge 到 Assignment 的内部 FK。
 - Account 删除受购买历史 `RESTRICT` 约束。
@@ -1229,6 +1257,7 @@ Playground 根操作必须来自已认证 Account。CLI 和未启用 Billing 的
 - 新增四张 Platform SQLModel tables。
 - 建立一个逻辑名为 `cube.platform.credit_accounting` 的独立 TableSpec，包含四张物理表，并由宿主通过 `tables.toml` 选择。
 - SQLite 和 MySQL 都实现相同 CHECK、UNIQUE、FK 与索引。
+- `cube_session_message` 增加独立可空 `workload_id VARCHAR(64)`，与消息一同保存受信任的异步 Thread 投递上下文；公开 payload 不增加该字段。
 - Repository 实现校验式幂等和 Balance 原子增量。
 - 扩展 Platform `AccountingService`：
   - 服务端生成 `workload_id` 并创建 Assignment。
@@ -1240,14 +1269,14 @@ Playground 根操作必须来自已认证 Account。CLI 和未启用 Billing 的
 
 - `AgentRunRequest`、`AgentRunState`、`AgentRunContext` 增加/传播 `workload_id`。
 - `DeliverMessage` 增加可选的受信任 `workload_id`，并限制只有 `mode=RECEIVE` 可携带。
-- Platform 新增不可写入 transcript 的 `SessionDeliveryContext`；`RuntimeSessionCommandExecutor` 把命令字段交给 `BaseSession.receive`，Chat/Task 根 receive 在创建一个或多个初始 Runs 时复用它。
+- `RuntimeSessionCommandExecutor` 把命令字段交给 `SessionRuntime.receive` 的 `SessionDeliveryContext`；receive 持久化消息及独立 Workload 列后返回 `ThreadDeliveryHandle`，Thread 通过 `ThreadInboxItem` / `ThreadTransactionContext` 在后续处理时提交 Runs。
 - `ToolRunContext`、`ToolCallContext` 传播 `workload_id`。
-- SubAgent、Workflow 和 background durable payload 传播 `workload_id`。
+- SubAgent 从当前 live invocation grant 传播 `workload_id`；Task 在首次 start 时保存 `TaskState.workload_id`，其 Phase、Workflow、Review rework 与 restart 全部继承；background durable payload 继续保存该字段。
 - 扩展 `PreModelCallInput` 与 `PostModelCallInput`。
 - 普通 assistant 路径把 `turn_id/source/labels/client_kind` 传给 Pre Hook。
 - Full compaction 补齐 Pre Hook。
 - `CompactModelCallState` 显式回传 admission error。
-- Router 初始化 `llm_code=None`，持续检查响应/chunks 的最终 deployment identity。
+- group/router 初始化 `llm_code=None`，持续检查响应/chunks 的最终 deployment identity；场景路由与实际模型池维度保留在 Metric 中。
 
 ### 23.3 Platform runtime/hooks
 
@@ -1257,6 +1286,7 @@ Playground 根操作必须来自已认证 Account。CLI 和未启用 Billing 的
 - 扩展 `RuntimeCapabilityMaterializer`，向两个 Hook 绑定同一个 Platform accounting runtime；禁止各自无参构造 coordinator 或使用全局 singleton。
 - billing `PluginSpec.requires_tables` 只声明逻辑 TableSpec `cube.platform.credit_accounting`；该 spec 内含四张表。
 - 所有候选保存 free/paid marker。
+- group/router 对所选模型池及 fallback 池内全部 deployments 取得快照；准入不按 `deployment_tags` 缩减候选。
 - key 冲突 fail-closed 且不覆盖。
 - Admission 使用靠后 priority；Post 开始时原子 pop 快照，Settlement 失败不恢复。
 - snapshot 缺失时按 `source_msg_id` 查询既有 Charge，匹配则视为重复 Post，未命中则 write-off。
@@ -1267,6 +1297,7 @@ Playground 根操作必须来自已认证 Account。CLI 和未启用 Billing 的
 
 - `LLMConfigEntry` 增加收费字段，默认免费。
 - Core `LLMConfig` 不增加 Credits 字段。
+- `AgencyLLMService` 解析 Secret 后仅 materialize Core 模型字段，剔除 Platform 收费字段。
 - 现有配置 GET/PUT 增加 DTO 校验和整数转换。
 - 前端加入一个收费状态开关和四项 Rate 输入。
 - 只显示 placeholder，不自动填入推荐值。
@@ -1289,21 +1320,24 @@ Playground 根操作必须来自已认证 Account。CLI 和未启用 Billing 的
 
 ### 23.7 现有 LLMCallMetric 注释修正
 
-`cube/platform/database/table/_llm_call_metric.py` 当前源码注释仍把 Metric 描述为“账单事实”，并描述了随消息硬删除的旧关系。实现 Issue #18 时应只修正这些注释，使其明确表达：
+`cube/platform/database/table/_llm_call_metric.py` 的旧注释曾把 Metric 描述为“账单事实”。PR 已修正该说明，合并 main 时保留以下边界：
 
 - `LLMCallMetric` 是 Token、模型和时间统计投影。
 - 它不是 Customer Charge、Credit Balance 或 Statement 的事实源。
 - Metric 的删除、重建或生命周期不能影响 ModelCallCharge 与 CreditTransaction。
 
-本方案阶段只把该项列入实施清单，不修改现有业务代码。
+这属于统计与账务职责的澄清，不改变 Metric 的采集方式。
 
 ### 23.8 Cutover 与滚动发布
 
 - 旧 `LLMCallMetric` 不回填、不迁移、不追溯扣费。
 - 旧 `llm.json` 缺少收费字段时默认免费，无需数据 backfill。
-- 先部署数据库 schema，再部署 Core/Platform、全部 workers、Playground backend 和 frontend。
-- 混合版本期间保持所有模型免费。
-- 确认全部 workers 支持 workload 与 hooks 后，再逐个 LLM Configuration 显式开启收费。
+- 新 Runtime Database 通过现有建表流程自动包含 `cube_session_message.workload_id`。已有 SQLite/MySQL Runtime Database 必须在部署新 Thread 投递路径前补齐该列；`create_all` 不会给已有表补列。
+- 使用 `uv run --all-extras python scripts/migrate_session_workload_context.py --url-env CUBE_RUNTIME_DATABASE_URL` 检查已有库，默认 dry-run。环境变量应保存目标库的异步 SQLAlchemy URL；脚本默认变量名为 `CUBE_MYSQL_URL`，通过 `--url-env` 可指定 SQLite 或 MySQL 的其他变量。停止 backend/worker 写入、核对目标与 dry-run 结果后，在同一命令追加 `--apply` 执行加列；已有列时幂等跳过。历史消息保持 `NULL`，不猜测付款人、不回填历史 Workload、不追扣 Credits。
+- 先部署数据库 schema，再部署 Core/Platform 和使用**全新唯一 rollout tag** 的全部 workers。
+- 等新 worker cohort 全部健康后，Playground backend 切换到相同 rollout tag，最后部署 frontend；不得复用旧 tag 来声称版本已隔离。
+- owner lease、worker heartbeat、gateway selection 与 command envelope 的 rollout tag 必须一致；不一致时 fail closed，不把既有 Session 发给旧 worker。
+- 混合版本期间保持所有模型免费。确认全部 workers 支持 workload 与 hooks 后，再逐个 LLM Configuration 显式开启收费。
 
 ## 24. 测试矩阵
 
@@ -1328,6 +1362,8 @@ Playground 根操作必须来自已认证 Account。CLI 和未启用 Billing 的
 - Runtime DB、repository、配置校验异常（包括 `ValueError`）转 blocking output，而不是被 dispatcher 吞掉或向外泄漏。
 - coordinator key 冲突不覆盖。
 - Router 全免费。
+- 同一模型池内多个 deployments，按最终实际实例结算；候选池外实例不结算。
+- 同池免费与付费部署混合时保守准入，包括请求 tags 只选择免费部署的情况。
 - 免费 primary + 付费 fallback。
 - labels 命中不同 initial config。
 - 无关 rule 分支不参与准入。
@@ -1384,12 +1420,17 @@ Playground 根操作必须来自已认证 Account。CLI 和未启用 Billing 的
 - background durable payload 和恢复。
 - SubAgent。
 - Workflow。
-- Task start、intervention、resume、review/rework。
+- Task 首次 start 固定归属，主 Thread 对话、Phase、Workflow、pause/restart 与 review/rework 继承；后续 delivery context 不替换付款人。
 - follow-up/steer 不换付款人。
 - cancel 不产生费用或转移付款人。
 - 新根 Run 创建新 Workload。
 - `DeliverMessage.workload_id` 只允许 RECEIVE；steer/follow-up 携带时命令校验失败。
-- local/cluster codec 与 `RuntimeSessionCommandExecutor → SessionDeliveryContext → AgentRunRequest` 链路一致。
+- local/cluster codec 与 `RuntimeSessionCommandExecutor → SessionDeliveryContext → SessionMessageDO.workload_id → ThreadInboxItem / ThreadTransactionContext → AgentRunRequest` 链路一致。
+- durable receive 在异步处理和重启后保留 Workload；重复消息不能替换首次归属。
+- 主 Thread 归档/轮换、话题恢复和成员变化后，历史与排队 Run 的 Workload 不变；后续新根消息属于其实际发起者。
+- 话题无可用默认 Agent 时自动选择免费或付费 Agent：保留发送者 Workload，按实际配置应用免费/付费规则；排队与恢复保持已保存的 responder 和付款归属。
+- Thread 硬删除后 Charge、Transaction、Balance 与个人 Statement 不变，允许对应运营 Token Metric 被清理。
+- SQLite/MySQL 旧表加列 migration 的 dry-run、apply 与幂等行为，历史消息保留 NULL。
 - 浏览器伪造 workload/billing subject 被忽略或拒绝。
 
 ### 24.7 数据库约束与并发
@@ -1424,14 +1465,17 @@ Playground 根操作必须来自已认证 Account。CLI 和未启用 Billing 的
 ### 24.9 Statement、UI 与隐私
 
 - 按 `posted_at` 归期。
+- 账期与条目时间均按当前设备时区展示；跨月边界按同一 IANA 时区计算。
 - 按 Workload 聚合并展开 Charges。
+- Statement 与 Payment History 分别分页并按最新时间倒序，默认每页 20 条；Workload 聚合条目不跨页拆分。
 - 零收费 Charge 不进 Statement/时间消费统计。
 - 购买入账与 Payment History 分离。
 - opening/closing balance。
-- 大整数格式化为普通积分和货币。
+- 大整数格式化为普通积分和货币；余额与 Statement 汇总使用不隐藏微小非零值的自适应精度，展开的单次 Charge 与 Rate 保留完整六位精度。
 - 付款人与其他 Session viewer 得到不同错误投影。
 - 同一共享 Session 的两个 WebSocket 同时收到同一 Run 终态时，payer 与非 payer 的 reason/action 不同。
 - realtime、watch/reconnect activity snapshot 和 HTTP 历史查询过滤一致。
+- 新 Agent 运行历史入口及 UI 覆盖付款人、非付款人和无法取得 Assignment 的情况；只有确认付款人后才展示积分不足及购买动作。
 - 任一浏览器 payload 都不含 `workload_id` 或 `billing_subject_ref`。
 - 无持续 Banner。
 - 个人设置 Credits 区域。
@@ -1454,6 +1498,8 @@ uv run --all-extras python -m compileall cube tests
 普通测试不得调用真实 LLM 或真实支付渠道。
 
 ## 25. 分阶段实施
+
+以下保留原实施的依赖顺序。PR 已完成原方案实现；合入 main 的剩余适配与验证见第 27 节，不需要从头重做全部阶段。
 
 ### 阶段 1：Accounting schema 与数学
 
@@ -1519,3 +1565,22 @@ uv run --all-extras python -m compileall cube tests
 - 其他 Session 成员看不到付款人的财务错误。
 - 旧 `LLMCallMetric` 不迁移、不追溯收费，其源码注释得到纠正。
 - 账务事实独立于 Message、Session 和运行时对象生命周期。
+
+## 27. 最新 main 兼容性复核（2026-09-18）
+
+复核对象是 [PR #23](https://github.com/mindshake-ai/cube/pull/23) 的 `23a0311` 与 main `527ab87`，共同基点为 `5545590`。只读比较和模拟合并发现 11 个冲突文件，主要涉及表清单、投影参数、前端运行展示、接口导出与测试；本次没有合并或修改计费实现，也没有运行合并后的行为测试。
+
+### 27.1 保留的设计
+
+成功 Model Call 计费、固定 Workload 付款人、调用前费率快照、独立不可变账务、余额原子更新及幂等充值仍然成立。main 本轮没有修改 Core 模型调用、计费 Hook 或账务服务。Thread 成员和默认 responder 决定谁执行，Workload 决定谁付款，两者继续分离。
+
+未显式指定 Agent 时允许自动或随机选择，按最终实际模型及调用开始时费率向根消息发送者收费；不增加显式选 Agent 或逐次价格确认。调用前不冻结、允许在途透支、失败调用及结算故障永久免单，均延续已确认的 v1 取舍。
+
+### 27.2 合并时必须完成的适配
+
+- 新 Agent 运行历史入口补齐付款人投影与购买动作。main 的 `_agent_run_history_item` 直接调用 `run_view(run)`；如果仅合并旧投影，付款人也会被降级为通用运行失败，丢失积分不足提示。继续保留对非付款人的财务信息过滤。
+- 将购买入口接入 main 新的消息状态区和 Run 时间线，同时保留 pending/processed、SubAgent 展示与 Thread 权限过滤。
+- 同时保留 main 的新表选择、Thread 管理命令与 PR 的 accounting 表选择、受信任 Workload 和 worker rollout 隔离，不能以整文件选择一侧代替语义合并。
+- 验证主 Thread 轮换、话题恢复、排队及成员变化不改写历史付款归属；删除话题后个人余额、账单和账务事实保持，允许运营 Token Metric 随历史清理。
+
+第 24 节已补充相关验收场景。原 PR 验收记录只证明原版本行为；合并并完成这些检查后，才能把最新 main 的兼容状态更新为已验证。
