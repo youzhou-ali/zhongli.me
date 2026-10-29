@@ -3,7 +3,7 @@ title: 周末计划：构建个人 LLM Wiki，打通 Obsidian 多端同步
 slug: weekend-plan-llm-wiki-obsidian-livesync
 date: 2026.10.29
 category: 计划
-summary: 这个周末准备做两件事：让 Codex 帮我把本机积累的知识整理成个人 LLM Wiki，再用 NAS 上的 CouchDB 打通 Obsidian 电脑与手机的同步。
+summary: 这个周末准备做两件事：让 Codex 从对话和项目中提炼 source，由 LLM Wiki 构建个人知识库，再用 NAS 上的 CouchDB 打通 Obsidian 电脑与手机的同步。
 ---
 
 这个周末（10 月 31 日—11 月 1 日），准备整理一下自己的知识管理工具。先把要做的事记下来，完成之后再补实际过程和踩坑记录。
@@ -26,15 +26,33 @@ Skill 的安装命令：
 npx skills add https://github.com/nashsu/llm_wiki_skill.git --skill llm-wiki
 ```
 
-### 让 Codex 帮我构建知识库
+### 让 Codex 提炼资料，让 LLM Wiki 构建 Wiki
+
+Codex 负责从对话和项目上下文中提炼适合沉淀的资料，写入 `raw/sources/`；LLM Wiki 负责读取这些资料，生成并维护项目 Wiki。
+
+这里的 source 是经过提炼、带有出处的资料：一个问题的背景、一次技术决策的理由、一段排错过程或一个阶段的项目进展。无需搬运所有项目文件，也无需逐条归档全部聊天。Codex 生成的摘要应明确标记为整理资料，保留原始会话或项目文件的出处，方便后续核对。
 
 客户端安装好后，准备从下面这段提示词开始：
 
-> 我想构建我的 LLM Wiki 知识库，已经安装了客户端，但我的知识大部分都在本机 Codex 的历史记录里。请先检查可访问的历史记录和 LLM Wiki 项目，梳理适合沉淀的主题，给出目录和导入方案。先选一小批有价值的内容试跑，保留来源和时间，区分事实、结论与待验证想法，去除密钥和隐私信息，不要修改原始记录。然后协助我导入资料、构建 Wiki，并检查生成结果。
+> 我已经安装了 LLM Wiki 客户端。请从本机可访问的 Codex 对话和项目上下文中，总结出适合 LLM Wiki 摄入的 source 资料，写入我指定知识库的 raw/sources 目录。先选一个项目试跑，按项目、资料类型和主题控制分类与命名，每份资料聚焦一个主题。内容包含背景、关键事实、决策及理由、验证结果、待解决问题和来源，区分已验证结论、讨论中的方案与未执行计划，不确定的信息明确标注。过滤密钥和隐私信息，保持原始对话与项目文件不变。你的写入范围仅限 raw/sources，由 LLM Wiki 自己摄入资料、生成并维护 wiki。先展示分类规则和少量样例，检查后再扩展。
 
-这里要先验证两件事：Codex 能否读取本机历史记录，以及这些记录应该怎样整理成适合导入的资料。安装 Skill 只是接通工具，历史记录的整理和导入还需要单独完成。
+### Source 的分类与命名约定
 
-这次先以一个小范围的结果为目标：选一个主题，整理一批资料，生成页面，再用几个真实问题检查能否找到来源、得到有用的回答。
+先采用一个简单、固定的约定，后续按实际使用调整：
+
+- 按项目分类：`raw/sources/projects/<project>/`。
+- 项目下按资料类型分类：`context/`（背景）、`decisions/`（决策）、`troubleshooting/`（排错）、`progress/`（阶段进展）。
+- 文件名使用 `YYYY-MM-DD--<topic>.md`，日期取资料对应事件或阶段日期，主题使用简短且稳定的英文 slug。
+- 每份资料记录标题、项目、类型、发生时间、整理时间、来源会话 ID／文件路径／提交号，以及结论状态。无法获取的来源信息明确标注，不补造。
+- 同一主题的补充内容在定稿前合并；已经摄入的资料尽量保留，通过新的补充或修订 source 关联旧资料，说明替代了哪项结论。
+
+例如：`raw/sources/projects/cube/decisions/2026-10-31--payment-provider-selection.md`。这只是命名示例，不代表已经作出支付渠道决策。
+
+### 后续增量更新
+
+后续同步也沿用这个分工：定期检查新增对话和项目变化，提炼新增的有效知识，生成 source，再交给 LLM Wiki 摄入。使用处理记录和内容哈希避免重复生成；一次对话可以提炼成多个主题，多次对话也可以合并为一份资料。
+
+这次先验证完整流程：选一个项目，生成少量 source，检查分类、命名和出处，再让 LLM Wiki 构建页面，用几个真实问题检查结果。
 
 ## 第二件事：给 Obsidian 配置 LiveSync
 
@@ -60,7 +78,7 @@ npx skills add https://github.com/nashsu/llm_wiki_skill.git --skill llm-wiki
 
 - 安装并配置 LLM Wiki 客户端。
 - 在 Codex 中安装 LLM Wiki Skill，验证连接。
-- 从本机 Codex 历史记录整理一批资料，完成首次 Wiki 构建。
+- 从 Codex 对话和项目中提炼一批 raw/sources，统一命名与分类，由 LLM Wiki 完成首次 Wiki 构建。
 - 在 NAS 上部署 CouchDB。
 - 电脑端和手机端 Obsidian 配置 LiveSync。
 - 完成笔记与附件的双向同步测试。
