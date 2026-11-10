@@ -4,6 +4,7 @@ slug: hachimodock
 date: 2026.11.10
 category: AI硬件
 summary: 小米技术委孵化的开源桌面终端，ESP32-P4 + 2.8 英寸竖屏，实时盯着 Claude Code / Codex 干活，还能语音派活、自己写小组件、联动米家。150 元是官方口径，按清单实算要 177 元起，复刻先对版本再下单。
+visual: https://raw.githubusercontent.com/YizhengWw/HachimoDock/main/assets/agent-status.gif
 ---
 
 11 月 10 日记。咸鱼找人做的那台这个月到货，先把查到的东西记下来，免得到货手忙脚乱。
