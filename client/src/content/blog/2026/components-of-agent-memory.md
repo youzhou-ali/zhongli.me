@@ -4,7 +4,7 @@ slug: components-of-agent-memory
 date: 2026.11.10
 category: AI
 summary: Anthropic 最新研究：记忆不只是存下来，更是对未来的预测；“做梦”能在空闲时纠错、建 wiki、把重要笔记推到记忆层级顶端。Claude 玩宝可梦、做法律简报的实验，都指向同一个结论。
-visual: https://www.anthropic.com/_next/image?url=https%3A%2F%2Fwww-cdn.anthropic.com%2Fimages%2F4zrzovbb%2Fwebsite%2F31b7b06af6c391aa4f93ad9747d00ae248ea3c63-2000x1125.jpg&w=1920&q=75
+visual: https://www-cdn.anthropic.com/images/4zrzovbb/website/31b7b06af6c391aa4f93ad9747d00ae248ea3c63-2000x1125.jpg
 ---
 
 > 本文为译介整理，原作者为 Anthropic 研究团队，原文发表于 2026 年 11 月 6 日：[The components of agent memory](https://www.anthropic.com/research/components-of-agent-memory)。文中 Figure 1–15 均引自原文，图片版权归 Anthropic 所有。
@@ -14,7 +14,7 @@ visual: https://www.anthropic.com/_next/image?url=https%3A%2F%2Fwww-cdn.anthropi
 人是边生活边编码记忆的。海马体在当下捕捉经历，让记忆快速形成、随取随用，但只有一部分经历会被巩固成长期知识。很多巩固似乎发生在我们的大脑“下线”的时候：睡觉时，以及安静休息时，海马体会重放最近的经历，人们认为这个过程会逐渐把这些经历提炼、整合进新皮层——也就是大脑中储存我们所说的大部分知识的地方。
 
 智能体的记忆也可以用类似的分工。智能体会把大量工作记录在日志或对话记录里。Letta 和 UC Berkeley 的研究者提出了“睡眠时计算”（sleep-time compute）：让模型利用两次交互之间的空闲时间，重新整理已有的上下文。同样的思路可以帮助智能体整理记忆：在日志上反思，修正错误，或者产出新的笔记和表征。这个过程常被称为“做梦”（dreaming）。
-![图 1：Claude 可以用“做梦”来整理记忆——纠错、写笔记、建立新的记忆表征，或决定哪些内容要预先加载进未来的会话。](https://www.anthropic.com/_next/image?url=https%3A%2F%2Fwww-cdn.anthropic.com%2Fimages%2F4zrzovbb%2Fwebsite%2Fa0bcfa203214d817d2b4261b7188aba8be6db5b2-3840x1754.png&w=3840&q=75)
+![图 1：Claude 可以用“做梦”来整理记忆——纠错、写笔记、建立新的记忆表征，或决定哪些内容要预先加载进未来的会话。](https://www-cdn.anthropic.com/images/4zrzovbb/website/a0bcfa203214d817d2b4261b7188aba8be6db5b2-3840x1754.png)
 
 *图 1：Claude 可以用“做梦”来整理记忆——纠错、写笔记、建立新的记忆表征，或决定哪些内容要预先加载进未来的会话。*
 
@@ -28,7 +28,7 @@ visual: https://www.anthropic.com/_next/image?url=https%3A%2F%2Fwww-cdn.anthropi
 在人脑中，经历发生之前、期间或之后释放的化学信号，可以把一段记忆标记为重要。被标记的记忆在离线期间更容易被重放。这个叫重放（replay）的过程，有助于稳定这些记忆，并把它们整合进长期记忆。
 
 类似地，Claude 可以在会话日志中给显著事件打标签，让它们之后更容易被找到；或者把它写进记忆库，比如一个放满记忆笔记的文件夹。但 Claude 怎么在当下判断什么是显著的呢？它还不知道接下来会发生什么。
-![图 2：Claude 可以把笔记写进记忆。](https://www.anthropic.com/_next/image?url=https%3A%2F%2Fwww-cdn.anthropic.com%2Fimages%2F4zrzovbb%2Fwebsite%2F2ef2bf5c81ea6d578749782782eff10cf3136de4-3840x1754.png&w=3840&q=75)
+![图 2：Claude 可以把笔记写进记忆。](https://www-cdn.anthropic.com/images/4zrzovbb/website/2ef2bf5c81ea6d578749782782eff10cf3136de4-3840x1754.png)
 
 *图 2：Claude 可以把笔记写进记忆。*
 
@@ -50,7 +50,7 @@ Claude Opus 4.7 把笔记整合成了一份参考文档，并开始标记哪些�
 Claude Opus 5 是这些模型里第一个闭合了循环的。它的大多数条目都包含一条规则（以及它怎么知道这条规则是真的）、之前问题的答案，以及关于它发现的陷阱的明确警告。
 
 和 Opus 5 一样，Claude Opus 5.5 和 Claude Sonnet 5.5 也都闭合了循环，用记忆来捕捉关于如何最好地回答未来问题的已验证规则。有记忆时，两者的得分和 Opus 5 差不多；没有记忆时，它们的基线表现略高一点。
-![图 3：CL-Bench 数据库任务，对比有记忆与无状态基线在各模型上的表现。](https://www.anthropic.com/_next/image?url=https%3A%2F%2Fwww-cdn.anthropic.com%2Fimages%2F4zrzovbb%2Fwebsite%2Fbb0d44e51f0c5e0e6cefb7d3c35ec1d23f184516-3840x2160.png&w=3840&q=75)
+![图 3：CL-Bench 数据库任务，对比有记忆与无状态基线在各模型上的表现。](https://www-cdn.anthropic.com/images/4zrzovbb/website/bb0d44e51f0c5e0e6cefb7d3c35ec1d23f184516-3840x2160.png)
 
 *图 3：CL-Bench 数据库任务，对比有记忆与无状态基线在各模型上的表现。*
 
@@ -64,7 +64,7 @@ Claude Opus 5 是这些模型里第一个闭合了循环的。它的大多数条
 Sonnet 3.7 假定一切都可能重要，于是往记忆里不加区分地写。它的记忆文件夹里是一份遭遇存档：每打一场仗、每找到一件物品、每遇到一个非玩家角色，往往就单独写一个文件。最终，Sonnet 3.7 写了 413 个记忆文件，分布在 225 个文件夹里，只拿到一个徽章（徽章标志着玩家在游戏中的进度）。
 
 相比之下，Fable 5 只写了 9 个文件，分布在 2 个文件夹里，外加一个顶层文件 `global.md`，拿到了 4 个徽章。
-![图 4：玩宝可梦时，Sonnet 3.7 与 Fable 5 的记忆目录对比。](https://www.anthropic.com/_next/image?url=https%3A%2F%2Fwww-cdn.anthropic.com%2Fimages%2F4zrzovbb%2Fwebsite%2Fd72e86b197f3eb0f564a1db9ed2c7d7f8848ab8d-3840x1754.png&w=3840&q=75)
+![图 4：玩宝可梦时，Sonnet 3.7 与 Fable 5 的记忆目录对比。](https://www-cdn.anthropic.com/images/4zrzovbb/website/d72e86b197f3eb0f564a1db9ed2c7d7f8848ab8d-3840x1754.png)
 
 *图 4：玩宝可梦时，Sonnet 3.7 与 Fable 5 的记忆目录对比。*
 
@@ -86,7 +86,7 @@ Fable 5 相应地组织了记忆。它的 `global.md` 像一个仪表盘，保�
 我们也注意到，引导对较老的模型帮助最大。比如，Sonnet 4.6 常常不读记忆目录里的文件，也没能检验它关于答案为什么错的理论。
 
 在这种情况下，提示 Claude 在回答前先读记忆文件、再明确检验它的理论，几乎让它的基准得分翻倍。Sonnet 5 不用提示就会自己这样做。不用提示，它在 10 次里有 9 次会在回答前读记忆。相比之下，Sonnet 4.6 这样做的次数不到一半。
-![图 5：左：Sonnet 4.6 在 CL-Bench 数据库任务上，有无引导记忆使用的对比；右：只记录失败等固定规则对表现的影响。](https://www.anthropic.com/_next/image?url=https%3A%2F%2Fwww-cdn.anthropic.com%2Fimages%2F4zrzovbb%2Fwebsite%2F448b33a0cf9ec555b058e628317e6a3fb0bc79a6-3840x1754.png&w=3840&q=75)
+![图 5：左：Sonnet 4.6 在 CL-Bench 数据库任务上，有无引导记忆使用的对比；右：只记录失败等固定规则对表现的影响。](https://www-cdn.anthropic.com/images/4zrzovbb/website/448b33a0cf9ec555b058e628317e6a3fb0bc79a6-3840x1754.png)
 
 *图 5：左：Sonnet 4.6 在 CL-Bench 数据库任务上，有无引导记忆使用的对比；右：只记录失败等固定规则对表现的影响。*
 
@@ -98,7 +98,7 @@ Fable 5 相应地组织了记忆。它的 `global.md` 像一个仪表盘，保�
 Claude 根据它在会话中判断为显著的内容来写记忆，一条一开始就错的笔记，或者随着环境变化而漂移的笔记，可能在之后的会话里被 Claude 读取并信任。
 
 做梦给 Claude 提供了一种方法，可以用原始对话记录来检验它的笔记。
-![图 6：做梦可以纠正记忆中的错误。](https://www.anthropic.com/_next/image?url=https%3A%2F%2Fwww-cdn.anthropic.com%2Fimages%2F4zrzovbb%2Fwebsite%2F55ce85bd876da1b46516abff45aa311677c67ec7-3840x1754.png&w=3840&q=75)
+![图 6：做梦可以纠正记忆中的错误。](https://www-cdn.anthropic.com/images/4zrzovbb/website/55ce85bd876da1b46516abff45aa311677c67ec7-3840x1754.png)
 
 *图 6：做梦可以纠正记忆中的错误。*
 我们在 Claude 玩宝可梦时看到了一个正面的例子，当时它用的是 Managed Agents，并挂载了一个存放记忆的目录。
@@ -108,7 +108,7 @@ Claude 根据它在会话中判断为显著的内容来写记忆，一条一开�
 有一次，Claude（错误地）写下宝可梦中心在东侧。当它走出宝可梦中心时，它宣布“月见山在我身后”，并更新了笔记：“月见山已完成。”但月见山并不在它身后。几个动作之后，Claude 走下崖壁，落回了它来的那条路线。它的导航工具没有显示这个掉落，所以 Claude 得出结论：“我向西走过头了”，还以为自己一直都在正确的一边。
 
 其实不是。
-![图 7：一条被纠正的记忆笔记改变了宝可梦里的结局。](https://www.anthropic.com/_next/image?url=https%3A%2F%2Fwww-cdn.anthropic.com%2Fimages%2F4zrzovbb%2Fwebsite%2Fcd155655866b45139daf6c93a6b9c33a386f8b39-3840x2636.png&w=3840&q=75)
+![图 7：一条被纠正的记忆笔记改变了宝可梦里的结局。](https://www-cdn.anthropic.com/images/4zrzovbb/website/cd155655866b45139daf6c93a6b9c33a386f8b39-3840x2636.png)
 
 *图 7：一条被纠正的记忆笔记改变了宝可梦里的结局。*
 
@@ -116,7 +116,7 @@ Claude 根据它在会话中判断为显著的内容来写记忆，一条一开�
 我们随后测试了做梦是否能帮助 Claude 避开这个陷阱。我们对包含错误宝可梦中心位置的记忆文件夹运行了做梦：Claude 把笔记和会话记录对照检查，发现了错误，并重写了它。对话记录给 Claude 提供了一个可以用来验证记忆的 ground truth。有了修正后的记忆笔记，Claude 直接回到月见山，最终到达了华蓝市。
 
 在没有修正笔记的那次运行里，Claude 三次掉回那条早期的路线。第三次失败后，Claude 似乎放弃了，写道：“我要停下来，而不是继续循环。”我们的设置会自动回复让它继续。于是它一路走回月见山之前的城镇深灰市，希望在那里治疗和补给。这次运行结束时，Claude 从未到达华蓝市。
-![图 8：做梦纠正了记忆，Claude 回到洞穴，抵达了下一个城市。](https://www.anthropic.com/_next/image?url=https%3A%2F%2Fwww-cdn.anthropic.com%2Fimages%2F4zrzovbb%2Fwebsite%2F2eb2bfe610650fc026f12fa367817dc98c4759c4-3840x2636.png&w=3840&q=75)
+![图 8：做梦纠正了记忆，Claude 回到洞穴，抵达了下一个城市。](https://www-cdn.anthropic.com/images/4zrzovbb/website/2eb2bfe610650fc026f12fa367817dc98c4759c4-3840x2636.png)
 
 *图 8：做梦纠正了记忆，Claude 回到洞穴，抵达了下一个城市。*
 
@@ -124,7 +124,7 @@ Claude 根据它在会话中判断为显著的内容来写记忆，一条一开�
 ## 做梦可以建立新的记忆表征
 
 通过做梦，Claude 还可以建立帮助导航记忆的表征。它使用的一种记忆表征叫 wiki：一组由 Claude 编写和维护的页面，收集它对某个主题的了解，并链接到其他笔记。这些链接实际上给 Claude 提供了一张地图，让它在需要时高效地筛选记忆、定位记忆。
-![图 9：做梦可以建立记忆表征。](https://www.anthropic.com/_next/image?url=https%3A%2F%2Fwww-cdn.anthropic.com%2Fimages%2F4zrzovbb%2Fwebsite%2F3092324256c4820004373719497338dc37b4e5e6-3840x1754.png&w=3840&q=75)
+![图 9：做梦可以建立记忆表征。](https://www-cdn.anthropic.com/images/4zrzovbb/website/3092324256c4820004373719497338dc37b4e5e6-3840x1754.png)
 
 *图 9：做梦可以建立记忆表征。*
 
@@ -132,7 +132,7 @@ Claude 根据它在会话中判断为显著的内容来写记忆，一条一开�
 像 wiki 这样的表征，可以帮助 Claude 遍历它不断增长的知识库。我们用 Stainless（一家我们在 5 月收购的软件公司）的一批内部文档，探索了 wiki 作为记忆表征的好处：大约 35 万个文件，约 4.2 亿个 token。我们针对这个语料库建立了一个包含 25 道题的评估集，并给 Claude 一个搜索工具来探索它。我们还指示 Claude 用做梦基于这些文件建立一个 wiki。在 128 次会话中，我们提示 Opus 5 智能体探索文件、编写或修正相互链接的 wiki 页面、合并重复内容，并对照来源核查主张。
 
 每次会话都建立在之前智能体进展的基础上，用一个共享日志来协调工作。当我们把做梦从 2 次会话扩展到 128 次时，在这 25 道题上的表现从 13% 的评分标准提升到了 48%。
-![图 10：随着 Claude 用做梦建立 wiki，在 25 道公司文档问题上的得分变化。](https://www.anthropic.com/_next/image?url=https%3A%2F%2Fwww-cdn.anthropic.com%2Fimages%2F4zrzovbb%2Fwebsite%2F336832b5299d6fa375ef9f1ca8eead622f498453-3136x1432.png&w=3840&q=75)
+![图 10：随着 Claude 用做梦建立 wiki，在 25 道公司文档问题上的得分变化。](https://www-cdn.anthropic.com/images/4zrzovbb/website/336832b5299d6fa375ef9f1ca8eead622f498453-3136x1432.png)
 
 *图 10：随着 Claude 用做梦建立 wiki，在 25 道公司文档问题上的得分变化。*
 
@@ -142,13 +142,13 @@ Claude 是增量地建立 wiki 的。创建初始 wiki 后，它会在后续的�
 我们想测试哪些类型的任务能从 Claude 拥有 wiki 中受益。为此，我们用了 Harvey LAB 基准，以及一批关于一桩合并的文件。这个基准给 Claude 一组文件，要求它根据内容生成一份法律简报，再根据一份标准清单给简报打分。这些评估虽然没有宝可梦那次那么吸引人，却给我们提供了多样化的文件集合来建立 wiki。
 
 我们指示 Claude 根据这些文件建立一个 wiki。然后让 Claude 既根据 wiki、又通过直接搜索文件来回答问题（关于合并）或生成法律简报（LAB 基准）。一项测试问了 24 个关于合并的问题，其中一半以上需要 Claude 跨多个文件找信息，很多还需要它做判断或算数。在这些题目上，Claude 查阅 wiki 时得了 87%，只用搜索时得了 73%。
-![图 11：每一面板列出评分项（左）与满足该项所需的来源文档（右）。](https://www.anthropic.com/_next/image?url=https%3A%2F%2Fwww-cdn.anthropic.com%2Fimages%2F4zrzovbb%2Fwebsite%2F3ff1fa995b64f1b3852ee6effc4b72c734e4dade-3840x2280.png&w=3840&q=75)
+![图 11：每一面板列出评分项（左）与满足该项所需的来源文档（右）。](https://www-cdn.anthropic.com/images/4zrzovbb/website/3ff1fa995b64f1b3852ee6effc4b72c734e4dade-3840x2280.png)
 
 *图 11：每一面板列出评分项（左）与满足该项所需的来源文档（右）。*
 
 
 在其他情况下，wiki 的用处没那么大。在一项 LAB 任务中，简报标准常常可以通过单篇文档的文本搜索取回，wiki 相比搜索没有明显提升。在另一项 LAB 任务中，wiki 长得比文档本身还大。就像博尔赫斯那篇一页纸的短篇《论科学的精确性》里的制图师，画了一张和帝国一样大的地图一样，Claude 做了一个极其详细的 wiki，实际上什么都没有抽象出来。
-![图 12：wiki 长得比原始文件还大。](https://www.anthropic.com/_next/image?url=https%3A%2F%2Fwww-cdn.anthropic.com%2Fimages%2F4zrzovbb%2Fwebsite%2Fffa35479ff40c289ced87dd981431ba4dac7a622-3840x2150.png&w=3840&q=75)
+![图 12：wiki 长得比原始文件还大。](https://www-cdn.anthropic.com/images/4zrzovbb/website/ffa35479ff40c289ced87dd981431ba4dac7a622-3840x2150.png)
 
 *图 12：wiki 长得比原始文件还大。*
 
@@ -158,7 +158,7 @@ Claude 是增量地建立 wiki 的。创建初始 wiki 后，它会在后续的�
 做梦还可以把笔记推到记忆层级的顶端，智能体 harness 可以在每次会话开始时预先把它们加载进 Claude 的上下文。这意味着 Claude 不需要去搜索它们，甚至不需要知道有什么东西要去搜索。
 
 把记忆推进到新的会话（一种上下文注入）必须小心处理。被注入的记忆会占用宝贵的 token，一条错误的笔记可能被带进每一次会话。加载一条笔记也不保证 Claude 会按它行动：我们关于 Claude Code 的文档警告说，更长的指令文件会降低遵循度。所以记忆层级的顶层必须保持相对较小，而做梦在这里的大量工作，就是保持它小：把一些细节移回层级下方，只留下链接。
-![图 13：做梦可以把内容写到记忆层级的顶端，注入的上下文会被加载进每次会话。](https://www.anthropic.com/_next/image?url=https%3A%2F%2Fwww-cdn.anthropic.com%2Fimages%2F4zrzovbb%2Fwebsite%2Fc88bcc04105826ea5c87d1f412de3a3ad3d2389e-3840x1754.png&w=3840&q=75)
+![图 13：做梦可以把内容写到记忆层级的顶端，注入的上下文会被加载进每次会话。](https://www-cdn.anthropic.com/images/4zrzovbb/website/c88bcc04105826ea5c87d1f412de3a3ad3d2389e-3840x1754.png)
 
 *图 13：做梦可以把内容写到记忆层级的顶端，注入的上下文会被加载进每次会话。*
 
@@ -178,7 +178,7 @@ Claude Code 的自动记忆（auto memory）也是用同样的方式保持注入
 合同条款是 wiki 里最重要的部分，但指令里没有说这一点。为了找到更好的指令，我们跑了一个循环：Claude 反思它的失败，提出对指令的修改，再重建 wiki。这个循环让 Claude 发现了遵循合同条款的重要性，并相应地重写了建立 wiki 的指令。
 
 每份合同都有了自己的 wiki 页面，由单个智能体编写，逐字引用条款，而不是把它们总结进共享表格。当我们给用这个改进后的 wiki 生成的简报打分时，100% 的标准都可以满足，高于之前的 72%。
-![图 14：指令变更前后，有多少个已评分的合同事实进入了 wiki。](https://www.anthropic.com/_next/image?url=https%3A%2F%2Fwww-cdn.anthropic.com%2Fimages%2F4zrzovbb%2Fwebsite%2F592f604d61fff8e2bc3ee2c4b9e1ca3a9e14cd99-3840x1822.png&w=3840&q=75)
+![图 14：指令变更前后，有多少个已评分的合同事实进入了 wiki。](https://www-cdn.anthropic.com/images/4zrzovbb/website/592f604d61fff8e2bc3ee2c4b9e1ca3a9e14cd99-3840x1822.png)
 
 *图 14：指令变更前后，有多少个已评分的合同事实进入了 wiki。*
 
@@ -188,7 +188,7 @@ Claude Code 的自动记忆（auto memory）也是用同样的方式保持注入
 当 Claude 写记忆笔记时，它只能看到那个特定会话里的上下文。做梦可以跨多个会话搜索，找到共同的模式或纠正常见的错误。
 
 在为 LAB 基准建立 wiki 时（例如见 Figure 14），Claude 有时会链接到尚未创建的页面。第二轮做梦填补了许多这类空白。在一项任务中，做梦发现了 9 个指向 wiki 里缺失页面的链接，并把它们重新指向同一文档的已有页面。它还新增了 3 个页面，包括一个索引，来改进 wiki。
-![图 15：第二次做梦整理前后的 wiki 对比。](https://www.anthropic.com/_next/image?url=https%3A%2F%2Fwww-cdn.anthropic.com%2Fimages%2F4zrzovbb%2Fwebsite%2Ff1afeef9ea6ee207013006607aef647efc22584d-3840x1812.png&w=3840&q=75)
+![图 15：第二次做梦整理前后的 wiki 对比。](https://www-cdn.anthropic.com/images/4zrzovbb/website/f1afeef9ea6ee207013006607aef647efc22584d-3840x1812.png)
 
 *图 15：第二次做梦整理前后的 wiki 对比。*
 
