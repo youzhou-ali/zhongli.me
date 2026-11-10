@@ -13,7 +13,12 @@ const articleRehypePlugins: NonNullable<StreamdownProps["rehypePlugins"]> = [
     harden,
     {
       defaultOrigin: "https://zhongli.me",
-      allowedImagePrefixes: ["https://zhongli.me/"],
+      allowedImagePrefixes: [
+        "https://zhongli.me/",
+        "https://www.anthropic.com/",
+        "https://anthropic.com/",
+        "https://images.anthropic.com/",
+      ],
       allowedLinkPrefixes: ["*"],
       allowDataImages: true,
     },
