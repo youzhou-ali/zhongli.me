@@ -18,6 +18,7 @@ const articleRehypePlugins: NonNullable<StreamdownProps["rehypePlugins"]> = [
         "https://www.anthropic.com/",
         "https://anthropic.com/",
         "https://images.anthropic.com/",
+        "https://www-cdn.anthropic.com/",
       ],
       allowedLinkPrefixes: ["*"],
       allowDataImages: true,
