@@ -4,7 +4,6 @@ slug: hachimodock
 date: 2026.11.10
 category: AI硬件
 summary: 小米技术委孵化的开源桌面终端，ESP32-P4 + 2.8 英寸竖屏，实时盯着 Claude Code / Codex 干活，还能语音派活、自己写小组件、联动米家。150 元是官方口径，按清单实算要 177 元起，复刻先对版本再下单。
-visual: https://raw.githubusercontent.com/YizhengWw/HachimoDock/main/assets/agent-status.gif
 ---
 
 11 月 10 日记。咸鱼找人做的那台这个月到货，先把查到的东西记下来，免得到货手忙脚乱。
@@ -80,9 +79,6 @@ README 自己也留了口子：v3 的 24MHz 显示修复已在实机确认恢复
 
 适配 ChatGPT（Codex）、Claude、OpenClaw、MiMoCode、WorkBuddy 和 DeepSeek Harness。思考、执行、等待确认、完成、报错都会变成小狗的表情动作 + 会话气泡，完成或出错后气泡还会停留约 60 秒。
 
-![多会话气泡：哪个会话在读文件、跑工具、等确认，屏上就对应出现一个气泡](https://raw.githubusercontent.com/YizhengWw/HachimoDock/main/assets/session-bubbles.webp)
-
-*图：多会话气泡，哪个会话在读文件、跑工具、等确认，屏上就对应出现一个气泡。图片引自 HachimoDock 仓库，版权归原作者所有。*
 
 这是我最期待的一点。Claude Code 跑长任务时，不用反复切终端确认它是不是卡在等确认上。不过有两个限制：检测到程序不代表它的输入框已可用；切 WorkBuddy 的设备气泡，不代表电脑上的 WorkBuddy 对话也会自动切过去。不同 Agent 的适配完整程度不一样。
 
