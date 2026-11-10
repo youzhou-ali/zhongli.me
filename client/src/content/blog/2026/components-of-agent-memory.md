@@ -50,7 +50,7 @@ Claude Opus 4.7 把笔记整合成了一份参考文档，并开始标记哪些�
 Claude Opus 5 是这些模型里第一个闭合了循环的。它的大多数条目都包含一条规则（以及它怎么知道这条规则是真的）、之前问题的答案，以及关于它发现的陷阱的明确警告。
 
 和 Opus 5 一样，Claude Opus 5.5 和 Claude Sonnet 5.5 也都闭合了循环，用记忆来捕捉关于如何最好地回答未来问题的已验证规则。有记忆时，两者的得分和 Opus 5 差不多；没有记忆时，它们的基线表现略高一点。
-![图 3：CL-Bench 数据库任务，对比有记忆与无状态基线在各模型上的表现。](https://www-cdn.anthropic.com/images/4zrzovbb/website/bb0d44e51f0c5e0e6cefb7d3c35ec1d23f184516-3840x2160.png)
+![图 3：CL-Bench 数据库任务，对比有记忆与无状态基线在各模型上的表现。](https://www-cdn.anthropic.com/images/4zrzovbb/website/bb0d44c78cc431fb5e84fbf2cb17c4303bc6bd65-3840x2160.png)
 
 *图 3：CL-Bench 数据库任务，对比有记忆与无状态基线在各模型上的表现。*
 
@@ -64,7 +64,7 @@ Claude Opus 5 是这些模型里第一个闭合了循环的。它的大多数条
 Sonnet 3.7 假定一切都可能重要，于是往记忆里不加区分地写。它的记忆文件夹里是一份遭遇存档：每打一场仗、每找到一件物品、每遇到一个非玩家角色，往往就单独写一个文件。最终，Sonnet 3.7 写了 413 个记忆文件，分布在 225 个文件夹里，只拿到一个徽章（徽章标志着玩家在游戏中的进度）。
 
 相比之下，Fable 5 只写了 9 个文件，分布在 2 个文件夹里，外加一个顶层文件 `global.md`，拿到了 4 个徽章。
-![图 4：玩宝可梦时，Sonnet 3.7 与 Fable 5 的记忆目录对比。](https://www-cdn.anthropic.com/images/4zrzovbb/website/d72e86b197f3eb0f564a1db9ed2c7d7f8848ab8d-3840x1754.png)
+![图 4：玩宝可梦时，Sonnet 3.7 与 Fable 5 的记忆目录对比。](https://www-cdn.anthropic.com/images/4zrzovbb/website/5e15e10f665773050d90fafc38ab8dd76ae5368b-3840x2545.png)
 
 *图 4：玩宝可梦时，Sonnet 3.7 与 Fable 5 的记忆目录对比。*
 
@@ -86,7 +86,7 @@ Fable 5 相应地组织了记忆。它的 `global.md` 像一个仪表盘，保�
 我们也注意到，引导对较老的模型帮助最大。比如，Sonnet 4.6 常常不读记忆目录里的文件，也没能检验它关于答案为什么错的理论。
 
 在这种情况下，提示 Claude 在回答前先读记忆文件、再明确检验它的理论，几乎让它的基准得分翻倍。Sonnet 5 不用提示就会自己这样做。不用提示，它在 10 次里有 9 次会在回答前读记忆。相比之下，Sonnet 4.6 这样做的次数不到一半。
-![图 5：左：Sonnet 4.6 在 CL-Bench 数据库任务上，有无引导记忆使用的对比；右：只记录失败等固定规则对表现的影响。](https://www-cdn.anthropic.com/images/4zrzovbb/website/448b33a0cf9ec555b058e628317e6a3fb0bc79a6-3840x1754.png)
+![图 5：左：Sonnet 4.6 在 CL-Bench 数据库任务上，有无引导记忆使用的对比；右：只记录失败等固定规则对表现的影响。](https://www-cdn.anthropic.com/images/4zrzovbb/website/da03e864e4eba93a91314fa5f2a5d0e4c14b2a0f-3840x2310.png)
 
 *图 5：左：Sonnet 4.6 在 CL-Bench 数据库任务上，有无引导记忆使用的对比；右：只记录失败等固定规则对表现的影响。*
 
